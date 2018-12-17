@@ -21,6 +21,6 @@ https://github.com/itmeng2018/CodeSnippet/blob/master/login_douban.py
  - 封装一个`pymysql`模块, 实现自定义对`mysql数据库`的增删改查功能
  https://github.com/itmeng2018/CodeSnippet/blob/master/meng_sql.py
 
-### 6. ver_code.py
+### 6. verification_code.py
  - 使用PIL模块绘制验证码图片
 https://github.com/itmeng2018/CodeSnippet/blob/master/verification_code.py
