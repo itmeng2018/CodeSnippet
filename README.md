@@ -24,3 +24,10 @@ https://github.com/itmeng2018/CodeSnippet/blob/master/login_douban.py
 ### 6. verification_code.py
  - 使用PIL模块绘制验证码图片
 https://github.com/itmeng2018/CodeSnippet/blob/master/verification_code.py
+
+### 7. youdao_dict.py
+ - 类似`baidu_fanyi.py`, 通过有道实现命令行翻译
+https://github.com/itmeng2018/CodeSnippet/blob/master/youdao_dict.py
+
+### 8. tools
+ - 封装一个通用爬虫模块, 并把meng_sql模块加入, 生成一个可供安装的安装包
