@@ -7,9 +7,9 @@ from pymongo import MongoClient
 from bson.binary import Binary
 
 
-class MongoCache(object):
+class MongoMeng(object):
     """
-    封装MongoDB数据库, 可以快速达到快速存储/检索/对比的效果
+    封装MongoDB, 实现快速达到快速存储/检索/对比的效果
     """
 
     def __init__(self, expires=timedelta(days=30)):
@@ -83,7 +83,7 @@ class MongoCache(object):
 if __name__ == '__main__':
     # test
     # pass
-    m = MongoCache()
+    m = MongoMeng()
     # url = 'https://blog.csdn.net/qq_43125439/article/details/85059743'
     print('测试成功')
 
