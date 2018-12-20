@@ -6,60 +6,58 @@ import re
 import time
 from datetime import datetime
 from threading import Thread  # 多线程
-from urllib import robotparser  # 解析网站的robots.txt数据
 from urllib.parse import urlparse, urljoin, urldefrag  # 解析url
 
 import requests
 from retrying import retry  # 装饰器, 实现重试下载
 
 from forge_headers import UserAgent
-from mongo_cache import MongoCache
+from meng_mongo import MengMongo
 
 
-def save_url(html_content, url_str):
-    """
-    存储下载内容
-    :param html_content:
-    :param url_str:
-    :return:
-    """
-    md5 = hashlib.md5()
-    md5.update(html_content)
-    file_path = "./download/" + get_html_name(url_str) + ".html"
-    with open(file_path, 'wb') as f:
-        f.write(html_content)
+class Tools(object):
 
+    def save_url(self, html_content, url_str):
+        """
+        存储下载内容
+        :param html_content:
+        :param url_str:
+        :return:
+        """
+        md5 = hashlib.md5()
+        md5.update(html_content)
+        file_path = "./download/" + self.get_html_name(url_str) + ".html"
+        with open(file_path, 'wb') as f:
+            f.write(html_content)
 
-def get_html_name(url_str):
-    """
-    根据url生成文件名
-    :param url_str: url
-    :return: 从url中截取的文件名
-    """
-    path = urlparse(url_str).path
-    path_array = path.split('/')
-    file_name = "".join([i for i in path_array if i != ''])
-    # print(file_name)
-    if file_name[-5:] == '.html':
-        file_name = file_name[:-5]
-    if len(file_name) > 14:
-        file_name = file_name[-14:]
-    return file_name
+    def get_html_name(self, url_str):
+        """
+        根据url生成文件名
+        :param url_str: url
+        :return: 从url中截取的文件名
+        """
+        path = urlparse(url_str).path
+        path_array = path.split('/')
+        file_name = "".join([i for i in path_array if i != ''])
+        if file_name[-5:] == '.html':
+            file_name = file_name[:-5]
+        if len(file_name) > 14:
+            file_name = file_name[-14:]
+        return file_name
 
-
-def extractor_url_lists(html_content):
-    """
-    抽取网页中的链接
-    :param html_content:
-    :return: url_lists
-    """
-    url_regex = re.compile('<a[^>]+href=["\'](.*?)["\']', re.IGNORECASE)
-    return url_regex.findall(html_content)
+    def extractor_url_lists(self, html_content):
+        """
+        抽取网页中的链接
+        :param html_content:
+        :return: url_lists
+        """
+        url_regex = re.compile('<a[^>]+href=["\'](.*?)["\']', re.IGNORECASE)
+        return url_regex.findall(html_content)
 
 
 class CrawlerCommon(Thread):
     """
-    实现一个通用爬虫, 蕴含基本的爬虫功能, 涉及简单反反爬虫技术
+    实现一个通用爬虫, 蕴含基本的爬虫功能, 涉及简单反爬虫技术
     """
 
     def __init__(self, init_url):
@@ -72,9 +70,10 @@ class CrawlerCommon(Thread):
         self.proxies = {}  # 设置默认 proxies
         self.link_regex = '(index|view)'  # 抽取网址的过滤条件
         self.throttle = Throttle(3.0)  # 下载限流器, 3秒
-        self.mcache = MongoCache()  # 初始化MongoCache()
+        self.mcache = MengMongo(host="139.196.137.234")  # 初始化MongoCache()
         self.filter_keyword_for_url = ''  # 初始化url队列过滤关键字
         self.__max_dep = 2  # 初始化爬虫爬取深度, 默认2
+        self.tools = Tools()
 
     def get_user_agent(self):
         __ua = UserAgent()
@@ -103,7 +102,7 @@ class CrawlerCommon(Thread):
             ]
         }
         if re.match('http', url_str) is None:
-            print('ParameterError: The parameter can only be HTTP or HTTPS')
+            print('line 105: ParameterError: The parameter can only be HTTP or HTTPS')
         if re.match('https', url_str) is None:
             model = 'http'
         else:
@@ -141,15 +140,14 @@ class CrawlerCommon(Thread):
         :param url_str: http://www.xxxx.com/xxxx
         :param data: post请求需求的数据包
         :param method: 请求方式
-        :param proxies: 设置代理
         :return: 响应内容
         """
-        print('检测url: ', url_str)
+        print('line 145 检测url: ', url_str)
         try:
             # 捕获 retry_download 异常, 结合断言
             result = self.retry_download(url_str, data, method)
         except Exception as e:
-            print(e)
+            print('line 150: ', e)
             result = None
         return result
 
@@ -167,10 +165,13 @@ class CrawlerCommon(Thread):
         把结果存入数据库, 存入前检查内容是否存在
         :param html_content: 下载的二进制内容
         :param url_str: 下载网页的url
-        :return: 无️
+        :return: 无
         """
         if url_str not in self.mcache:
+            print('line 171:  内容不存在.....')
             self.mcache[url_str] = html_content
+            self.tools.save_url(html_content, url_str)
+            print('line 174:  保存成功!')
         else:
             # 计算数据库记录的MD5摘要
             mongo_md5_str = hashlib.md5(self.mcache[url_str]).hexdigest()
@@ -181,10 +182,10 @@ class CrawlerCommon(Thread):
             # 进行内容对比
             if download_md5_str != mongo_md5_str:
                 self.mcache[url_str] = html_content
-                save_url(html_content, url_str)
-                print('内容不存在, 开始下载......')
+                self.tools.save_url(html_content, url_str)
+                print('line 186:  内容不存在, 开始下载......')
             else:
-                print('内容已存在, 跳过下载')
+                print('line 188:  内容已存在, 跳过下载')
 
     def run(self):
         """
@@ -214,7 +215,7 @@ class CrawlerCommon(Thread):
                     except UnicodeDecodeError:
                         res = html_content.decode('gbk', 'ignore')
 
-                    url_list = extractor_url_lists(res)
+                    url_list = self.tools.extractor_url_lists(res)
 
                     # 筛选出需要爬取的链接
                     filter_urls = [link for link in url_list if
@@ -234,10 +235,9 @@ class Throttle(object):
     def __init__(self, delay):
         """
         初始化限流器
-        :param domains: 域名为key, 当前时间为value
         :param delay: 固定时间
         """
-        self.domains = {}
+        self.domains = {}  # 域名为key, 当前时间为value
         self.delay = delay
 
     def wait_url(self, url_str):
@@ -258,7 +258,7 @@ class Throttle(object):
 if __name__ == '__main__':
     # test
     # 给定url,  输入关键字
-    crawler = CrawlerCommon('https://www.qiushibaike.com/hot/page/2/')
+    crawler = CrawlerCommon('https://www.qiushibaike.com/hot/page/1/')
     crawler.filter_keyword_for_url = 'hot/page'
     crawler.set_max_dep(3)
     crawler.start()

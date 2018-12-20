@@ -12,28 +12,18 @@ class MongoMeng(object):
     封装MongoDB, 实现快速达到快速存储/检索/对比的效果
     """
 
-    def __init__(self, expires=timedelta(days=30)):
+    def __init__(self, expires=timedelta(days=30), host='localhost', port=27017):
         """
         初始化实例对象, 完成数据库的连接
         :param client: 数据库连接对象
         :param expires: 时间设置(把days转换成秒)
         """
         # 创建数据库连接
-        self.client = MongoClient("localhost", 27017)
+        self.client = MongoClient(host, port)
         # 创建数据库 cache
         self.db = self.client.cache
         # 设置索引, 加速查找, 设置数据生命期(到达时间后自动删除数据库中的数据)
         self.db.webpage.create_index('timestamp', expireAfterSeconds=expires.total_seconds())
-
-    def set_client(self, host, port):
-        """
-        TODO 设置数据库连接
-        :param host: 主机
-        :param port: 端口
-        :return:
-        """
-        self.client = MongoClient(host, port)
-        return True
 
     def __setitem__(self, key, value):
         """
@@ -82,19 +72,19 @@ class MongoMeng(object):
 
 if __name__ == '__main__':
     # test
-    m = MongoMeng()
-    # url = 'https://blog.csdn.net/qq_43125439/article/details/85059743'
-    print('测试成功')
+    m = MongoMeng(host="139.196.137.234")
+    url = 'https://blog.csdn.net/qq_43125439/article/details/85059743'
+    # print('测试成功')
 
-    # 存
+    # 存 --> ok
     # import requests
     # m[url] = requests.get(url).content
 
-    # 取
+    # 取 --> ok
     # res = m[url]
     # print(res.decode())
 
-    # 查
+    # 查 --> ok
     # if url in m:
     #     a = '有了'
     # else:
