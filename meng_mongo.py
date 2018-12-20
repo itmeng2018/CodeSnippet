@@ -1,9 +1,12 @@
+import pickle
+import zlib
+
 from pymongo import MongoClient
 
 
 class MengMongo(object):
     def __init__(self, db_name, collect_name, host=None, port=None):
-        self.host = '127.0.0.1' if host is None else host
+        self.host = '192.168.154.129' if host is None else host
         self.port = 27017 if port is None else port
         self.db_name = db_name
         self.collect_name = collect_name
@@ -85,6 +88,16 @@ class MengMongo(object):
         :return:
         """
         self.__collection.update_one(load_item, new_item)
+
+    @__try_operation
+    def get_one_html(self, item, attribute):
+        result = self.try_find_one(item)
+        return pickle.dumps(zlib.decompress(result[attribute]))
+
+    @__try_operation
+    def get_many_html(self, item, attribute):
+        result = self.try_find_many(item)
+        return [pickle.dumps(zlib.decompress(i[attribute])) for i in result]
 
     @__try_operation
     def try_update_many(self, load_item, new_item):

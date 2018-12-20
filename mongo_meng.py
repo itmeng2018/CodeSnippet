@@ -82,7 +82,6 @@ class MongoMeng(object):
 
 if __name__ == '__main__':
     # test
-    # pass
     m = MongoMeng()
     # url = 'https://blog.csdn.net/qq_43125439/article/details/85059743'
     print('测试成功')
